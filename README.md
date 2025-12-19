@@ -54,11 +54,11 @@ Analyzes the relevance of an embed to an article.
 ```json
 {
   "keep": true,
-  "reason": "Strong semantic similarity, high entity overlap, source boost: 0.20",
+  "reason": "Strong semantic similarity, high entity overlap, content boost: 0.20",
   "scores": {
     "semantic_similarity": 0.842,
     "entity_overlap": 0.667,
-    "source_boost": 0.200,
+    "content_boost": 0.200,
     "final_score": 0.688,
     "threshold": 0.250
   }
@@ -83,11 +83,11 @@ python test_api.py
 
 ## How It Works
 
-The analyzer combines multiple scoring components:
+The analyzer combines multiple AI-powered scoring components:
 
-- **Semantic Similarity** (60%): Uses sentence transformers to understand content meaning
-- **Entity Overlap** (25%): Identifies shared entities (people, organizations, locations)
-- **Source Quality** (15%): Boosts scores for official and authoritative sources
+- **Semantic Similarity** (60%): Uses sentence transformers to understand content meaning across languages
+- **Entity Overlap** (25%): Identifies shared people, organizations, locations, and key terms
+- **Content Boost** (15%): AI-powered assessment using cross-referencing, authority detection, and topic coherence
 
 ## Model Details
 

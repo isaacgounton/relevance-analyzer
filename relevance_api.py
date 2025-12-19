@@ -69,29 +69,71 @@ async def analyze_relevance(request: RelevanceRequest):
 
         entity_overlap = len(article_entities.intersection(embed_entities)) / len(article_entities.union(embed_entities)) if article_entities.union(embed_entities) else 0
 
-        # Check for exact source mentions (official accounts, organizations)
-        source_mention_boost = 0
-        article_lower = article_text.lower()
+        # Smart content-based relevance scoring (no hardcoded keywords)
+        # Analyze how well the embed content aligns with and references the article
+
+        # 1. Cross-reference boost: Does the embed appear to reference the article?
+        cross_reference_boost = 0
+
         embed_lower = request.embedContent.lower()
 
-        # Boost for official sources
-        if any(official in embed_lower for official in [
-            "banque du canada", "bank of canada", "official", "officiel",
-            "gouvernement", "government", "ministère", "ministry"
-        ]):
-            source_mention_boost += 0.2
+        # Check if embed mentions key entities from the article
+        key_article_entities = set()
+        for ent in article_doc.ents:
+            if ent.label_ in ['ORG', 'PERSON', 'GPE', 'MONEY', 'PERCENT']:
+                key_article_entities.add(ent.text.lower())
 
-        # Boost for direct topic mentions
-        if any(keyword in embed_lower for keyword in [
-            "taux directeur", "interest rate", "taux", "rate", "décision", "decision"
-        ]):
-            source_mention_boost += 0.15
+        embed_entity_mentions = sum(1 for entity in key_article_entities
+                                  if entity in embed_lower)
+        if embed_entity_mentions > 0:
+            cross_reference_boost += min(0.15, embed_entity_mentions * 0.05)  # Cap at 0.15
+
+        # 2. Authority language patterns (using semantic similarity to authoritative content)
+        # Compare embed against patterns of authoritative communication
+        authority_patterns = [
+            "official statement",
+            "according to sources",
+            "confirmed by",
+            "announced today",
+            "press release",
+            "spokesperson said"
+        ]
+
+        authority_embeddings = semantic_model.encode(authority_patterns, convert_to_tensor=True)
+        embed_auth_similarity = torch.mean(torch.cosine_similarity(
+            embed_embedding.unsqueeze(0), authority_embeddings, dim=1
+        )).item()
+
+        authority_boost = embed_auth_similarity * 0.1  # Scale down the authority signal
+
+        # 3. Topic coherence: Are they discussing the same subject?
+        # Use sentence-level analysis for better topic detection
+        article_sentences = [sent.text.strip() for sent in article_doc.sents if len(sent.text.strip()) > 10]
+        embed_sentences = [sent.text.strip() for sent in embed_doc.sents if len(sent.text.strip()) > 10]
+
+        if article_sentences and embed_sentences:
+            # Compare sentence embeddings for topic coherence
+            article_sent_embeddings = semantic_model.encode(article_sentences[:3], convert_to_tensor=True)  # First 3 sentences
+            embed_sent_embeddings = semantic_model.encode(embed_sentences[:2], convert_to_tensor=True)    # First 2 sentences
+
+            topic_coherence = torch.mean(torch.cosine_similarity(
+                article_sent_embeddings.unsqueeze(1),
+                embed_sent_embeddings.unsqueeze(0),
+                dim=2
+            )).item()
+
+            topic_boost = topic_coherence * 0.1
+        else:
+            topic_boost = 0
+
+        # Combine intelligent boosts
+        content_boost = cross_reference_boost + authority_boost + topic_boost
 
         # Enhanced scoring algorithm
         # Semantic similarity is now the primary factor (60%)
         # Entity overlap catches important names/places (25%)
-        # Source mention boost rewards official/relevant content (15%)
-        final_score = (semantic_sim * 0.6) + (entity_overlap * 0.25) + source_mention_boost
+        # Content boost uses AI to assess relevance without hardcoded keywords (15%)
+        final_score = (semantic_sim * 0.6) + (entity_overlap * 0.25) + content_boost
 
         # Adaptive threshold based on content length
         if len(request.embedContent) < 50:  # Very short embeds
@@ -118,14 +160,14 @@ async def analyze_relevance(request: RelevanceRequest):
         else:
             entity_reason = "low entity overlap"
 
-        boost_reason = f"source boost: {source_mention_boost:.2f}" if source_mention_boost > 0 else "no source boost"
+        boost_reason = f"content boost: {content_boost:.2f}" if content_boost > 0 else "no content boost"
 
         reason = f"{semantic_reason}, {entity_reason}, {boost_reason}"
 
         scores = {
             "semantic_similarity": round(semantic_sim, 3),
             "entity_overlap": round(entity_overlap, 3),
-            "source_boost": round(source_mention_boost, 3),
+            "content_boost": round(content_boost, 3),
             "final_score": round(final_score, 3),
             "threshold": round(threshold, 3)
         }
@@ -165,26 +207,71 @@ async def explain_relevance(request: RelevanceRequest):
 
         entity_overlap = len(article_entities.intersection(embed_entities)) / len(article_entities.union(embed_entities)) if article_entities.union(embed_entities) else 0
 
-        # Check for exact source mentions (official accounts, organizations)
-        source_mention_boost = 0
-        article_lower = article_text.lower()
+        # Smart content-based relevance scoring (no hardcoded keywords)
+        # Analyze how well the embed content aligns with and references the article
+
+        # 1. Cross-reference boost: Does the embed appear to reference the article?
+        cross_reference_boost = 0
+
         embed_lower = request.embedContent.lower()
 
-        # Boost for official sources
-        if any(official in embed_lower for official in [
-            "banque du canada", "bank of canada", "official", "officiel",
-            "gouvernement", "government", "ministère", "ministry"
-        ]):
-            source_mention_boost += 0.2
+        # Check if embed mentions key entities from the article
+        key_article_entities = set()
+        for ent in article_doc.ents:
+            if ent.label_ in ['ORG', 'PERSON', 'GPE', 'MONEY', 'PERCENT']:
+                key_article_entities.add(ent.text.lower())
 
-        # Boost for direct topic mentions
-        if any(keyword in embed_lower for keyword in [
-            "taux directeur", "interest rate", "taux", "rate", "décision", "decision"
-        ]):
-            source_mention_boost += 0.15
+        embed_entity_mentions = sum(1 for entity in key_article_entities
+                                  if entity in embed_lower)
+        if embed_entity_mentions > 0:
+            cross_reference_boost += min(0.15, embed_entity_mentions * 0.05)  # Cap at 0.15
+
+        # 2. Authority language patterns (using semantic similarity to authoritative content)
+        # Compare embed against patterns of authoritative communication
+        authority_patterns = [
+            "official statement",
+            "according to sources",
+            "confirmed by",
+            "announced today",
+            "press release",
+            "spokesperson said"
+        ]
+
+        authority_embeddings = semantic_model.encode(authority_patterns, convert_to_tensor=True)
+        embed_auth_similarity = torch.mean(torch.cosine_similarity(
+            embed_embedding.unsqueeze(0), authority_embeddings, dim=1
+        )).item()
+
+        authority_boost = embed_auth_similarity * 0.1  # Scale down the authority signal
+
+        # 3. Topic coherence: Are they discussing the same subject?
+        # Use sentence-level analysis for better topic detection
+        article_sentences = [sent.text.strip() for sent in article_doc.sents if len(sent.text.strip()) > 10]
+        embed_sentences = [sent.text.strip() for sent in embed_doc.sents if len(sent.text.strip()) > 10]
+
+        if article_sentences and embed_sentences:
+            # Compare sentence embeddings for topic coherence
+            article_sent_embeddings = semantic_model.encode(article_sentences[:3], convert_to_tensor=True)  # First 3 sentences
+            embed_sent_embeddings = semantic_model.encode(embed_sentences[:2], convert_to_tensor=True)    # First 2 sentences
+
+            topic_coherence = torch.mean(torch.cosine_similarity(
+                article_sent_embeddings.unsqueeze(1),
+                embed_sent_embeddings.unsqueeze(0),
+                dim=2
+            )).item()
+
+            topic_boost = topic_coherence * 0.1
+        else:
+            topic_boost = 0
+
+        # Combine intelligent boosts
+        content_boost = cross_reference_boost + authority_boost + topic_boost
 
         # Enhanced scoring algorithm
-        final_score = (semantic_sim * 0.6) + (entity_overlap * 0.25) + source_mention_boost
+        # Semantic similarity is now the primary factor (60%)
+        # Entity overlap catches important names/places (25%)
+        # Content boost uses AI to assess relevance without hardcoded keywords (15%)
+        final_score = (semantic_sim * 0.6) + (entity_overlap * 0.25) + content_boost
 
         # Adaptive threshold based on content length
         if len(request.embedContent) < 50:  # Very short embeds
@@ -198,7 +285,7 @@ async def explain_relevance(request: RelevanceRequest):
 
         # Generate detailed explanation
         explanation = generate_semantic_explanation(
-            semantic_sim, entity_overlap, source_mention_boost, final_score, threshold, keep,
+            semantic_sim, entity_overlap, content_boost, final_score, threshold, keep,
             article_entities, embed_entities, request
         )
 
@@ -209,7 +296,7 @@ async def explain_relevance(request: RelevanceRequest):
             "scores": {
                 "semantic_similarity": round(semantic_sim, 3),
                 "entity_overlap": round(entity_overlap, 3),
-                "source_boost": round(source_mention_boost, 3)
+                "content_boost": round(content_boost, 3)
             },
             "explanation": explanation
         }
@@ -217,7 +304,7 @@ async def explain_relevance(request: RelevanceRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-def generate_semantic_explanation(semantic_sim, entity_overlap, source_boost, final_score, threshold, keep,
+def generate_semantic_explanation(semantic_sim, entity_overlap, content_boost, final_score, threshold, keep,
                                 article_entities, embed_entities, request):
     """Generate human-readable explanation of the semantic analysis results."""
 
@@ -251,14 +338,14 @@ def generate_semantic_explanation(semantic_sim, entity_overlap, source_boost, fi
         explanation.append(f"• Found {len(shared_entities)} shared entities: {', '.join(list(shared_entities)[:5])}{'...' if len(shared_entities) > 5 else ''}")
         explanation.append(f"• Entity overlap: {entity_overlap:.3f} - {'Strong entity alignment' if entity_overlap > 0.3 else 'Some entity overlap' if entity_overlap > 0.1 else 'Limited entity alignment'}")
 
-    # Source Quality Analysis
-    explanation.append("\n🏛️ **Source Quality Analysis**")
-    if source_boost > 0.15:
-        explanation.append(f"• Official source detected (+{source_boost:.2f}) - Embed appears to be from an authoritative source.")
-    elif source_boost > 0.05:
-        explanation.append(f"• Topic-relevant content (+{source_boost:.2f}) - Embed discusses relevant subject matter.")
+    # Content Quality Analysis
+    explanation.append("\n🎯 **Content Quality Analysis**")
+    if content_boost > 0.15:
+        explanation.append(f"• Strong content alignment (+{content_boost:.2f}) - Embed shows high relevance through cross-referencing and topic coherence.")
+    elif content_boost > 0.05:
+        explanation.append(f"• Moderate content alignment (+{content_boost:.2f}) - Some relevant connections detected.")
     else:
-        explanation.append("• No source quality boost detected.")
+        explanation.append("• Limited content alignment detected.")
 
     # Specific insights
     explanation.append("\n💡 **AI Analysis Insights**")
@@ -267,15 +354,15 @@ def generate_semantic_explanation(semantic_sim, entity_overlap, source_boost, fi
             explanation.append("• **Primary issue**: AI model identifies fundamentally different topics")
         if entity_overlap < 0.05:
             explanation.append("• **Missing connection**: No shared people, organizations, or locations")
-        if source_boost == 0:
-            explanation.append("• **Quality concern**: No evidence of official or authoritative source")
+        if content_boost == 0:
+            explanation.append("• **Quality concern**: Limited content alignment with article")
     else:
         if semantic_sim > 0.5:
             explanation.append("• **Strength**: Strong semantic understanding of related content")
         if entity_overlap > 0.2:
             explanation.append("• **Strength**: Key entities are consistent between article and embed")
-        if source_boost > 0.1:
-            explanation.append("• **Strength**: High-quality source alignment")
+        if content_boost > 0.1:
+            explanation.append("• **Strength**: High content alignment and relevance")
 
     # Summary recommendation
     explanation.append(f"\n📊 **Final Assessment**: Score {final_score:.3f} vs threshold {threshold:.3f}")
