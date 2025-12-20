@@ -1,14 +1,16 @@
-# Relevance Analyzer
+# Enhanced Relevance Analyzer v2.0
 
-Enterprise-grade AI API for analyzing embed relevance to articles using advanced semantic understanding and multi-dimensional scoring.
+Next-generation AI API for analyzing embed relevance to articles using adaptive intelligence, contextual understanding, and dynamic threshold optimization.
 
-## Core Capabilities
+## 🚀 Major Enhancements v2.0
 
-- **Advanced Semantic Analysis** - Sentence transformer-based meaning comprehension across 100+ languages
-- **Comprehensive Entity Recognition** - 13 entity types including organizations, people, locations, events, products, and legal entities
-- **Authority Pattern Detection** - 80+ authoritative communication patterns for news, business, technical, and official content
-- **Configurable Thresholds** - Customizable strictness levels and domain-specific optimization
-- **Multilingual Support** - Built-in multilingual authority patterns and semantic models
+- **Dynamic Threshold Calculation** - Article complexity scoring with adaptive thresholds (no more static values!)
+- **Contextual Entity Matching** - Weighted importance, partial matching, and hierarchical relationships
+- **Temporal Relevance Detection** - Time-sensitive content boosting for breaking news and timely embeds
+- **Geographic Relevance** - Location-based analysis with hierarchical matching (e.g., "San Francisco" matches "California")
+- **Enhanced Semantic Analysis** - Concept extraction with focused similarity scoring
+- **Domain-Specific Optimization** - Tailored algorithms for news, tech, business, medical, and legal content
+- **Multi-dimensional Scoring** - 50% enhanced semantic, 30% contextual entity, 20% contextual analysis
 
 ## Installation
 
@@ -22,6 +24,8 @@ python -m spacy download en_core_web_sm
 ## Quick Start
 
 ```bash
+
+# Or original version
 python relevance_api.py
 ```
 
@@ -45,20 +49,31 @@ API available at `http://localhost:8000` • Interactive docs at `http://localho
 }
 ```
 
-**Response:**
+**Enhanced Response v2.0:**
 ```json
 {
   "keep": true,
-  "reason": "Good semantic similarity, high entity overlap, content boost: 0.18",
+  "reason": "Strong conceptual alignment, high entity precision, temporal relevance (+0.12) | cross-reference (+0.18)",
   "scores": {
-    "semantic_similarity": 0.742,
-    "entity_overlap": 0.314,
-    "content_boost": 0.180,
-    "final_score": 0.532,
-    "threshold": 0.250
+    "enhanced_semantic": 0.724,
+    "entity_similarity": 0.683,
+    "contextual_score": 0.342,
+    "article_complexity": 0.721,
+    "entity_richness": 12,
+    "final_score": 0.674,
+    "threshold": 0.158,
+    "temporal_boost": 0.120,
+    "geographic_boost": 0.000
   }
 }
 ```
+
+### 🎯 Key Improvements in v2.0
+
+**Dynamic Threshold Example:**
+- **Complex Article** (high entity density): `threshold: 0.158` (more permissive)
+- **Simple Article** (low entity density): `threshold: 0.285` (stricter filtering)
+- **No more static 0.2 threshold!**
 
 ### POST /explain-relevance
 
@@ -72,9 +87,26 @@ Returns available configuration options and usage guidelines.
 
 | Parameter | Type | Default | Options | Description |
 |-----------|------|---------|---------|-------------|
-| `threshold` | float | adaptive | 0.0-1.0 | Custom threshold override |
-| `strictness` | string | `"standard"` | `"strict"`, `"standard"`, `"lenient"` | Filter sensitivity |
+| `threshold` | float | **dynamic** | 0.0-1.0 | Custom threshold override (disables dynamic calculation) |
+| `strictness` | string | `"standard"` | `"strict"`, `"standard"`, `"lenient"` | Filter sensitivity (±0.08 adjustment) |
 | `domain` | string | `"general"` | `"news"`, `"tech"`, `"business"`, `"medical"`, `"legal"` | Content type optimization |
+
+### 🔄 Dynamic Threshold Algorithm v2.0
+
+**Article Complexity Factors:**
+- Entity density (40%): Number of entities per word
+- Lexical diversity (30%): Unique words / total words
+- Semantic diversity (30%): Sentence length variance
+
+**Threshold Calculation:**
+- **Complex article** (>0.7): `0.15` base threshold
+- **Medium article** (0.4-0.7): `0.20` base threshold
+- **Simple article** (<0.4): `0.25` base threshold
+
+**Adjustments:**
+- Entity richness: ±0.05 based on entity count
+- Embed length: ±0.05 to ±0.10 based on length
+- Strictness: ±0.08 for strict/lenient modes
 
 ## Performance Metrics
 
@@ -84,22 +116,56 @@ Returns available configuration options and usage guidelines.
 - **Model**: `paraphrase-multilingual-MiniLM-L12-v2`
 - **Languages**: 100+ supported
 
-## AI Scoring Components
+## 🧠 Enhanced AI Scoring Components v2.0
 
-**Semantic Similarity (60%)** - Transformer-based meaning comprehension and contextual understanding
+**Enhanced Semantic Analysis (50%)**
+- Transformer-based meaning comprehension
+- Concept extraction and focused similarity
+- Keyword-level topical alignment
+- Multilingual semantic understanding
 
-**Entity Overlap (25%)** - Named entity recognition across 13 types: ORG, PERSON, GPE, EVENT, PRODUCT, WORK_OF_ART, LAW, DATE, FAC, LOC, MONEY, PERCENT
+**Contextual Entity Matching (30%)**
+- Weighted entity importance (ORG/PERSON = 1.0, GPE = 0.7, DATE = 0.4)
+- Partial fuzzy matching (70% similarity threshold)
+- Hierarchical relationships (San Francisco → California)
+- Entity type prioritization
 
-**Content Quality (15%)** - Authority pattern detection, cross-reference analysis, and topic coherence assessment
+**Contextual Analysis (20%)**
+- **Temporal relevance** (0.0-0.2): Time-sensitive content boost
+- **Geographic relevance** (0.0-0.3): Location-based matching
+- **Cross-reference analysis** (0.0-0.2): Entity mention detection
+- **Authority indicators** (0.0-0.15): Credibility assessment
 
-## Authority Pattern Categories
+### 📊 Domain-Specific Boosts
 
-- **News & Reporting**: Breaking news, eyewitness reports, official announcements
-- **Corporate Communications**: Financial results, strategic initiatives, executive decisions
-- **Technical & Scientific**: Research findings, peer-reviewed studies, clinical trials
-- **Legal & Regulatory**: Court rulings, legislation, compliance documentation
-- **Emergency Alerts**: Public safety, weather warnings, health advisories
-- **Multilingual**: Authority patterns in 6 major languages
+**News Domain**: +50% temporal boost, +30% geographic boost
+**Tech Domain**: +20% entity precision boost
+**Business Domain**: +10% organizational entity boost
+
+## 🎯 Advanced Features v2.0
+
+### Entity Intelligence
+- **13 Entity Types**: ORG, PERSON, GPE, EVENT, PRODUCT, WORK_OF_ART, LAW, DATE, FAC, LOC, MONEY, PERCENT
+- **Importance Weighting**: Critical entities (ORG/PERSON) weighted higher than dates/locations
+- **Partial Matching**: "Fed" matches "Federal Reserve" with 70% similarity threshold
+- **Hierarchical Detection**: "San Francisco" connects to "California" automatically
+
+### Temporal Intelligence
+- **Time Pattern Recognition**: Breaking news, recent developments, real-time updates
+- **Date Extraction**: Multiple date formats and temporal expressions
+- **Timeliness Scoring**: Fresh content gets higher relevance scores
+- **News Cycle Awareness**: Prioritizes current events over historical references
+
+### Geographic Intelligence
+- **Location Hierarchy**: City → State → Country relationships
+- **Regional Relevance**: Local news prioritized for specific locations
+- **Cross-Border Matching**: Handles international location references
+- **Proximity Scoring**: Geographic distance affects relevance scores
+
+### Contextual Authority Detection
+- **Semantic Indicators**: "official", "confirmed", "announced", "verified"
+- **Source Assessment**: Credibility scoring based on language patterns
+- **Domain-Specific Patterns**: Different authority signals for news vs tech vs business
 
 ## Deployment
 
@@ -134,4 +200,30 @@ Comprehensive test suite covering accuracy, performance, and edge cases.
 ---
 
 
-This API provides a robust, AI-powered solution for content relevance analysis with configurable parameters and detailed explanations.
+---
+
+## 🔥 Version Comparison
+
+| Feature | v1.0 | v2.0 (Enhanced) |
+|---------|------|-----------------|
+| **Threshold** | Static (0.2 for standard) | Dynamic based on article complexity |
+| **Entity Matching** | Simple Jaccard similarity | Weighted + partial + hierarchical matching |
+| **Semantic Analysis** | Basic cosine similarity | Concept extraction + focused scoring |
+| **Temporal Awareness** | None | Time-sensitive content boosting |
+| **Geographic Awareness** | None | Location hierarchy + proximity scoring |
+| **Domain Optimization** | Basic authority patterns | Advanced domain-specific algorithms |
+| **Scoring Weights** | 60%/25%/15% | 50%/30%/20% with contextual boosts |
+| **Accuracy** | Good | **Significantly Improved** |
+
+## 🚀 Why v2.0 is Revolutionary
+
+**Before**: Static threshold meant the same relevance criteria for simple news articles and complex financial reports.
+
+**After**: Dynamic thresholds adapt to content characteristics - complex articles get more permissive thresholds (easier to match), while simple articles get stricter filtering (higher quality control).
+
+**Real-World Impact**:
+- **News Organizations**: Better filtering for breaking news vs feature articles
+- **Content Platforms**: More accurate embed recommendations by content type
+- **Social Media**: Improved relevance detection for trending vs evergreen content
+
+**This enhanced API provides a next-generation, adaptive solution for content relevance analysis that intelligently adjusts to the complexity and characteristics of each article.**
