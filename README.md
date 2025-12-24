@@ -214,6 +214,25 @@ Returns available configuration options and usage guidelines.
 - **Source Assessment**: Credibility scoring based on language patterns
 - **Domain-Specific Patterns**: Different authority signals for news vs tech vs business
 
+## 🔐 Session Persistence (Bypassing Login Walls)
+
+If Meta (Facebook/Instagram) or other platforms block screenshots with a login page, you can provide a pre-authenticated session.
+
+### 1. Generate your session file
+Run the helper script locally on your machine (requires a screen/GUI):
+
+```bash
+python scripts/generate_auth.py
+```
+
+1. A browser window will open.
+2. Log into Facebook and Instagram.
+3. Once logged in, go back to the terminal and press **ENTER**.
+4. This creates an `auth.json` file in your root directory.
+
+### 2. Use with the API
+Ensure `auth.json` is present in the same directory where you run `main.py`. The `ScreenshotService` will automatically detect it and use your active session to bypass login prompts.
+
 ## Deployment
 
 ### Docker

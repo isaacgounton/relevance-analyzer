@@ -11,6 +11,7 @@ class ScreenshotService:
     def __init__(self, browserless_url: Optional[str] = None, browserless_token: Optional[str] = None):
         self.browserless_url = browserless_url or os.getenv("BROWSERLESS_URL")
         self.browserless_token = browserless_token or os.getenv("BROWSERLESS_TOKEN")
+        self.auth_path = "auth.json"
         
         if not self.browserless_url:
             raise ValueError("BROWSERLESS_URL is not set")
@@ -68,10 +69,17 @@ class ScreenshotService:
         """
         async with async_playwright() as p:
             browser = await p.chromium.connect_over_cdp(self.ws_endpoint)
-            context = await browser.new_context(
-                viewport={'width': 800, 'height': 800},
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            )
+            
+            context_args = {
+                "viewport": {'width': 800, 'height': 800},
+                "user_agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            if os.path.exists(self.auth_path):
+                print(f"Using session from {self.auth_path}")
+                context_args["storage_state"] = self.auth_path
+                
+            context = await browser.new_context(**context_args)
             page = await context.new_page()
             
             try:
@@ -129,10 +137,17 @@ class ScreenshotService:
         async with async_playwright() as p:
             # Connect to Browserless
             browser = await p.chromium.connect_over_cdp(self.ws_endpoint)
-            context = await browser.new_context(
-                viewport={'width': 1280, 'height': 800},
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            )
+            
+            context_args = {
+                "viewport": {'width': 1280, 'height': 800},
+                "user_agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            if os.path.exists(self.auth_path):
+                print(f"Using session from {self.auth_path}")
+                context_args["storage_state"] = self.auth_path
+                
+            context = await browser.new_context(**context_args)
             page = await context.new_page()
             
             try:
