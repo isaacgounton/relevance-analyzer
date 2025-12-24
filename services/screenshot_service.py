@@ -33,7 +33,34 @@ class ScreenshotService:
                 ws_url += "/chromium"
                 
         self.ws_endpoint = f"{ws_url}?token={self.browserless_token}" if self.browserless_token else ws_url
+        
+        # Add stealth mode for bypassing bot detection
+        if "?" in self.ws_endpoint:
+            self.ws_endpoint += "&stealth"
+        else:
+            self.ws_endpoint += "?stealth"
+            
         print(f"Connecting to: {self.ws_endpoint}")
+
+    def _transform_url(self, url: str) -> str:
+        """
+        Transform URLs to public embed versions to bypass login walls.
+        """
+        # Instagram
+        if "instagram.com/p/" in url or "instagram.com/reels/" in url:
+            if "/embed" not in url:
+                # Remove trailing slash if exists and add /embed/
+                base_url = url.rstrip('/')
+                return f"{base_url}/embed/"
+        
+        # Facebook
+        if "facebook.com" in url:
+            if "/posts/" in url or "/photos/" in url or "/videos/" in url:
+                import urllib.parse
+                encoded_url = urllib.parse.quote(url)
+                return f"https://www.facebook.com/plugins/post.php?href={encoded_url}&show_text=true"
+
+        return url
 
     async def capture_single_embed(self, embed_url: str) -> Optional[Dict]:
         """
@@ -48,8 +75,9 @@ class ScreenshotService:
             page = await context.new_page()
             
             try:
-                print(f"Navigating directly to embed: {embed_url}...")
-                await page.goto(embed_url, wait_until="load", timeout=90000)
+                transformed_url = self._transform_url(embed_url)
+                print(f"Navigating directly to embed: {transformed_url} (original: {embed_url})...")
+                await page.goto(transformed_url, wait_until="load", timeout=90000)
                 await page.wait_for_timeout(5000) # Wait for hydration
                 
                 # Detect the type of embed based on URL or content
@@ -109,8 +137,9 @@ class ScreenshotService:
             
             try:
                 # Navigate to the article
-                print(f"Navigating to {url}...")
-                await page.goto(url, wait_until="load", timeout=90000)
+                transformed_url = self._transform_url(url)
+                print(f"Navigating to {transformed_url}...")
+                await page.goto(transformed_url, wait_until="load", timeout=90000)
                 
                 # Wait for content to settle
                 await page.wait_for_timeout(10000)
