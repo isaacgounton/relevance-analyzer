@@ -79,6 +79,53 @@ API available at `http://localhost:8000` • Interactive docs at `http://localho
 
 Returns detailed AI-powered explanation of the relevance analysis with scoring breakdown and recommendations.
 
+### POST /screenshot-embeds
+
+Detect and capture screenshots of embeds within an article.
+
+**Request:**
+```json
+{
+  "url": "https://www.monfric.ca/nouvelles/la-banque-du-canada-annonce-sa-decision-concernant-le-taux-directeur-du-10-decembre",
+  "embed_url": "https://x.com/fordnation/status/1978779503213052337" (optional)
+}
+```
+
+**Response:**
+```json
+{
+  "url": "https://www.monfric.ca/...",
+  "screenshots": [
+    {
+      "type": "twitter",
+      "index": 0,
+      "screenshot": "base64_encoded_image..."
+    }
+  ],
+  "count": 1
+}
+```
+
+### POST /screenshot-single-embed
+
+Directly screenshot a single embed URL (social post, video, etc.).
+
+**Request:**
+```json
+{
+  "url": "https://twitter.com/fordnation/status/1978779503213052337"
+}
+```
+
+**Response:**
+```json
+{
+  "url": "https://twitter.com/...",
+  "type": "twitter",
+  "screenshot": "base64_encoded_image..."
+}
+```
+
 ### GET /config
 
 Returns available configuration options and usage guidelines.

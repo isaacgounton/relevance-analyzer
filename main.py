@@ -9,6 +9,7 @@ app = FastAPI(title="Enhanced Embed Relevance Analyzer", version="2.0.0")
 
 # Initialize services
 relevance_service = RelevanceService()
+screenshot_service = ScreenshotService()
 
 class RelevanceRequest(BaseModel):
     articleTitle: str
@@ -28,8 +29,7 @@ class RelevanceResponse(BaseModel):
 
 class ScreenshotRequest(BaseModel):
     url: str
-    browserless_url: Optional[str] = None
-    browserless_token: Optional[str] = None
+    embed_url: Optional[str] = None  # Optional parameter as requested
 
 class ScreenshotItem(BaseModel):
     type: str
@@ -41,6 +41,14 @@ class ScreenshotResponse(BaseModel):
     url: str
     screenshots: List[ScreenshotItem]
     count: int
+
+class SingleEmbedRequest(BaseModel):
+    url: str
+
+class SingleEmbedResponse(BaseModel):
+    url: str
+    type: str
+    screenshot: str  # Base64 encoded
 
 @app.post("/analyze-relevance", response_model=RelevanceResponse)
 async def analyze_relevance(request: RelevanceRequest):
@@ -66,21 +74,55 @@ async def analyze_relevance(request: RelevanceRequest):
 async def screenshot_embeds(request: ScreenshotRequest):
     """
     Detect and screenshot embeds within a given article URL.
+    If embed_url is provided, it will prioritize capturing that specific embed.
     """
     try:
-        service = ScreenshotService(
-            browserless_url=request.browserless_url,
-            browserless_token=request.browserless_token
-        )
-        screenshots = await service.get_embed_screenshots(request.url)
+        all_screenshots = []
+        
+        # If a specific embed URL is provided as a parameter
+        if request.embed_url:
+            single_res = await screenshot_service.capture_single_embed(request.embed_url)
+            if single_res:
+                all_screenshots.append(ScreenshotItem(
+                    type=single_res["type"],
+                    selector="direct_url",
+                    index=0,
+                    screenshot=single_res["screenshot"]
+                ))
+        
+        # Also find other embeds on the page if url is provided
+        if request.url:
+            find_res = await screenshot_service.get_embed_screenshots(request.url)
+            for item in find_res:
+                all_screenshots.append(ScreenshotItem(**item))
         
         return ScreenshotResponse(
             url=request.url,
-            screenshots=screenshots,
-            count=len(screenshots)
+            screenshots=all_screenshots,
+            count=len(all_screenshots)
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Screenshot process failed: {str(e)}")
+
+@app.post("/screenshot-single-embed", response_model=SingleEmbedResponse)
+async def screenshot_single_embed(request: SingleEmbedRequest):
+    """
+    Directly screenshot a single embed URL.
+    """
+    try:
+        result = await screenshot_service.capture_single_embed(request.url)
+        if not result:
+            raise HTTPException(status_code=404, detail="Could not capture embed from provided URL")
+            
+        return SingleEmbedResponse(
+            url=result["url"],
+            type=result["type"],
+            screenshot=result["screenshot"]
+        )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Single embed capture failed: {str(e)}")
 
 @app.get("/config")
 def get_config():

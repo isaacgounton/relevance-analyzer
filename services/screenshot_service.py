@@ -35,6 +35,66 @@ class ScreenshotService:
         self.ws_endpoint = f"{ws_url}?token={self.browserless_token}" if self.browserless_token else ws_url
         print(f"Connecting to: {self.ws_endpoint}")
 
+    async def capture_single_embed(self, embed_url: str) -> Optional[Dict]:
+        """
+        Navigate directly to an embed URL and capture it.
+        """
+        async with async_playwright() as p:
+            browser = await p.chromium.connect_over_cdp(self.ws_endpoint)
+            context = await browser.new_context(
+                viewport={'width': 800, 'height': 800},
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            )
+            page = await context.new_page()
+            
+            try:
+                print(f"Navigating directly to embed: {embed_url}...")
+                await page.goto(embed_url, wait_until="load", timeout=90000)
+                await page.wait_for_timeout(5000) # Wait for hydration
+                
+                # Detect the type of embed based on URL or content
+                type_detected = "unknown"
+                if "twitter.com" in embed_url or "x.com" in embed_url:
+                    type_detected = "twitter"
+                elif "youtube.com" in embed_url or "youtu.be" in embed_url:
+                    type_detected = "youtube"
+                elif "instagram.com" in embed_url:
+                    type_detected = "instagram"
+                elif "tiktok.com" in embed_url:
+                    type_detected = "tiktok"
+
+                # Try to find a good element to screenshot, or default to full page
+                # For Twitter/X, we might want the tweet article
+                selector = "body"
+                if type_detected == "twitter":
+                    selector = "article"
+                elif type_detected == "youtube":
+                    selector = "#player"
+                
+                element = await page.query_selector(selector) if selector != "body" else None
+                
+                if element:
+                    await element.scroll_into_view_if_needed()
+                    await page.wait_for_timeout(1000)
+                    screenshot_bytes = await element.screenshot(timeout=10000)
+                else:
+                    # Fallback to full page screenshot of the viewport
+                    screenshot_bytes = await page.screenshot(full_page=False, timeout=10000)
+                
+                screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+                
+                return {
+                    "type": type_detected,
+                    "url": embed_url,
+                    "screenshot": screenshot_base64
+                }
+                
+            except Exception as e:
+                print(f"Error capturing single embed {embed_url}: {e}")
+                return None
+            finally:
+                await browser.close()
+
     async def get_embed_screenshots(self, url: str) -> List[Dict]:
         screenshots = []
         
