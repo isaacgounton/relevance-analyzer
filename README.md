@@ -26,7 +26,7 @@ python -m spacy download en_core_web_sm
 ```bash
 
 # Or original version
-python relevance_api.py
+python main.py
 ```
 
 API available at `http://localhost:8000` • Interactive docs at `http://localhost:8000/docs`

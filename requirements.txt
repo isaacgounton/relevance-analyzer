@@ -7,3 +7,5 @@ pydantic
 sentence-transformers
 torch
 numpy
+playwright
+python-dotenv
